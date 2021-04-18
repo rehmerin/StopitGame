@@ -1,0 +1,156 @@
+int Led1Pin = 3;
+int Led2Pin = 4; 
+int Led3Pin = 5; 
+int Led4Pin = 6;
+int Led5Pin = 7;
+int ButtonPin = 2;
+int buzzer = 9;
+
+//Starting values
+int button_pressed = LOW;
+int score = 0;
+int LightPosition = 0;
+
+//How much time in between LED light changes.
+int pause = 1000;
+
+//What time it was when we last moved the light.
+long lastMove = millis();
+
+
+void setup()
+{
+  pinMode(Led1Pin, OUTPUT);
+  pinMode(Led2Pin, OUTPUT);
+  pinMode(Led3Pin, OUTPUT);
+  pinMode(Led4Pin, OUTPUT);
+  pinMode(Led5Pin, OUTPUT);
+  pinMode(buzzer,OUTPUT);
+  pinMode(ButtonPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(ButtonPin), interrupt, RISING);
+  
+  Serial.begin(9600);
+  Serial.println("Begin Game!");
+}
+
+void loop()
+{
+  if(button_pressed == HIGH)
+  {buttonPressed();
+  }
+    
+  //Move the light.
+  if(millis() - lastMove >= pause)
+  {
+    lastMove = millis(); //Remember when we switched LED
+    
+    LightPosition++; //increment the Light position.
+    if(LightPosition >= 7) LightPosition = 2;
+    
+    move(LightPosition);//Update the light position.
+  }
+}
+
+//Updates the light's position.
+void move(int LightPosition)
+{
+ //Turn off all LEDs
+for (int x = Led1Pin; x <= Led5Pin;x++)
+{
+  digitalWrite(x, LOW);
+}
+
+//Turn on the LED
+digitalWrite(LightPosition + 1, HIGH);
+}
+
+void interrupt()
+{
+button_pressed = HIGH;  
+}
+
+void buttonPressed()
+{
+    //If the pressed it when the light was in the middle, speed up and continue.
+    if(LightPosition == 4)
+    {
+      digitalWrite(Led3Pin, LOW);
+      delay(50);
+      digitalWrite(Led3Pin, HIGH);
+      //Speed up the game.
+      if(pause > 700)
+      {
+        pause -= 200;
+        score += 100;
+        tone(buzzer, 4000); 
+      delay(10);
+      noTone(buzzer);
+      } else if (pause > 500)
+      {
+        pause -= 200;
+        score += 100;
+        tone(buzzer, 4000); 
+      delay(10);
+      noTone(buzzer);
+      } else if (pause > 300)
+      {
+        pause -= 100;
+        score += 100;
+        tone(buzzer, 4000); 
+      delay(10);
+      noTone(buzzer);
+      } else if (pause > 10)
+      {
+        pause -= 50;
+        score += 100;
+        tone(buzzer, 4000); 
+      delay(10);
+      noTone(buzzer);
+      } else if (pause > 1)
+      {
+        pause -= 25;
+        score += 100;
+        tone(buzzer, 4000); 
+      delay(10);
+      noTone(buzzer);
+      }
+      
+      Serial.print("Score: ");
+      Serial.println(score);
+      
+    } else //If the pressed it at the wrong time, show their final score and start a new game.
+    {
+      //Game over
+      tone(buzzer, 1000); 
+      delay(1000);
+      noTone(buzzer);
+      Serial.println("GAME OVER");
+      Serial.print("Final Score ");
+      Serial.println(score);
+      
+      //Blink the Led that the player stopped on.
+      for (int x = 0; x <= 10; x++)
+      {
+        if(digitalRead(LightPosition + 1) == LOW)
+        {
+          digitalWrite(LightPosition + 1, HIGH);
+        }
+        else
+        {
+          digitalWrite(LightPosition + 1, LOW);
+        }
+        delay(200);
+      }
+      
+      newGame();
+    }
+    button_pressed = LOW;
+}
+
+void newGame()
+{
+  LightPosition = 0;
+  pause = 1000;
+  score = 0;
+  Serial.println("Begin Game!");
+}
